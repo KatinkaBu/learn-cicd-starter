@@ -6,7 +6,7 @@ import (
 	"net/http"
 )
 
-func respondWithError(w http.ResponseWriter, code int, msg string, logErr error){
+func respondWithError(w http.ResponseWriter, code int, msg string, logErr error) {
 	if logErr != nil {
 		log.Println(logErr)
 	}
