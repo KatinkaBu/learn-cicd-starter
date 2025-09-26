@@ -6,17 +6,14 @@ on:
 
 jobs:
   deploy:
-    name: Build & Push Image to Artifact Registry
+    name: Deploy
     runs-on: ubuntu-latest
-
     env:
       GCP_PROJECT_ID: notely-473308
-      GCP_REGION: us-central1
+      AR_REGION: us-central1
       AR_REPOSITORY: notely-ar-repo
       IMAGE_NAME: notely
       IMAGE_TAG: latest
-      # finaler Artifact-Registry-Tag:
-      IMAGE_URI: us-central1-docker.pkg.dev/notely-473308/notely-ar-repo/notely:latest
 
     steps:
       - name: Check out code
@@ -30,22 +27,24 @@ jobs:
       - name: Make build script executable
         run: chmod +x ./scripts/buildprod.sh
 
-      - name: Build production binary (Linux target)
+      - name: Build Linux binary
         run: ./scripts/buildprod.sh
 
-      - name: Set up gcloud
+      - name: Auth to GCP
+        uses: google-github-actions/auth@v2
+        with:
+          credentials_json: ${{ secrets.GCP_CREDENTIALS }}
+
+      - name: Setup gcloud
         uses: google-github-actions/setup-gcloud@v2
         with:
           project_id: ${{ env.GCP_PROJECT_ID }}
-          service_account_key: ${{ secrets.GCP_CREDENTIALS }}
-          export_default_credentials: true
 
-      - name: Configure Docker for Artifact Registry
-        run: gcloud auth configure-docker ${{ env.GCP_REGION }}-docker.pkg.dev --quiet
+      - name: Configure Docker for AR
+        run: gcloud auth configure-docker ${{ env.AR_REGION }}-docker.pkg.dev --quiet
 
-      - name: Build and push image via Cloud Build
+      - name: Build & Push Image to Artifact Registry
         run: |
           gcloud builds submit \
-            --project ${{ env.GCP_PROJECT_ID }} \
-            --tag ${{ env.IMAGE_URI }} \
+            --tag ${{ env.AR_REGION }}-docker.pkg.dev/${{ env.GCP_PROJECT_ID }}/${{ env.AR_REPOSITORY }}/${{ env.IMAGE_NAME }}:${{ env.IMAGE_TAG }} \
             .
