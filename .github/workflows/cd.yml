@@ -48,3 +48,18 @@ jobs:
           gcloud builds submit \
             --tag ${{ env.AR_REGION }}-docker.pkg.dev/${{ env.GCP_PROJECT_ID }}/${{ env.AR_REPOSITORY }}/${{ env.IMAGE_NAME }}:${{ env.IMAGE_TAG }} \
             .
+
+      - name: Deploy to Cloud Run
+        env:
+          PROJECT_ID: notely-473308
+          REGION: us-central1
+          AR_REPO: notely-ar-repo
+          IMAGE: notely
+          SERVICE_NAME: notely-v2   
+        run: |
+          gcloud run deploy "$SERVICE_NAME" \
+            --image "$REGION-docker.pkg.dev/$PROJECT_ID/$AR_REPO/$IMAGE:latest" \
+            --region "$REGION" \
+            --allow-unauthenticated \
+            --project "$PROJECT_ID" \
+            --max-instances=4
